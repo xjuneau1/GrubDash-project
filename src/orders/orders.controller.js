@@ -1,4 +1,5 @@
 const path = require("path");
+const { includes } = require("../data/orders-data");
 
 // Use the existing order data
 const orders = require(path.resolve("src/data/orders-data"));
@@ -32,7 +33,16 @@ function create(req, res, next) {
 }
 
 function update(req, res, next) {
+    const { orderId } = req.params
+    const { data: {deliverTo, mobileNumber, status, dishes} = {} } = req.body
+    const foundOrder = orders.find((order)=> order.id === orderId)
     
+    foundOrder.deliverTo = deliverTo
+    foundOrder.mobileNumber = mobileNumber
+    foundOrder.status = status
+    foundOrder.dishes = dishes
+
+    res.status(200).json({data: foundOrder})
 }
 
 function bodyDataHas(propertyName) {
@@ -85,6 +95,30 @@ function validateOrderExists(req, res, next) {
     })
 }
 
+function isValidStatus(req, res, next) {
+    const {data: {status} = {}} = req.body
+    const validStatus = ["pending", "preparing", "out-for-delivery", "delivered"]
+    if(validStatus.includes(status)) {
+        return next()
+    }
+    next({
+        status: 400,
+        message: "Order must have a status of pending, preparing, out-for-delivery, delivered"
+    })
+}
+
+function validateBodyIdEqualsRouteId(req, res, next) {
+    const { orderId }= req.params
+    const {data : {id} = {}} = req.body
+    if(id === orderId || !id){
+        return next()
+    }
+    next({
+        status: 400,
+        message: `Order id does not match route id. Order: ${id}, Route: ${orderId}.`
+    })
+}
+
 module.exports = {
   list,
   create: [
@@ -99,4 +133,16 @@ module.exports = {
     validateOrderExists,
     read
   ],
+  update: [
+    bodyDataHas("deliverTo"),
+    bodyDataHas("mobileNumber"),
+    bodyDataHas("dishes"),
+    bodyDataHas("status"),
+    validateOrderExists,
+    validateBodyIdEqualsRouteId,
+    isValidStatus,
+    isValidArray,
+    isValidQuantity,
+    update
+  ]
 };
