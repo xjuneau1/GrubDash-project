@@ -12,6 +12,12 @@ function list(req, res, next) {
   res.json({ data: orders });
 }
 
+function read(req, res, next) {
+    const { orderId } = req.params
+    const foundOrder = orders.find((order)=> order.id === orderId)
+    res.json({data: foundOrder})
+}
+
 function create(req, res, next) {
   const { data: { deliverTo, mobileNumber, status, dishes } = {} } = req.body;
   const newOrder = {
@@ -20,9 +26,13 @@ function create(req, res, next) {
     mobileNumber: mobileNumber,
     status: status,
     dishes: dishes,
-  }
-  orders.push(newOrder)
+  };
+  orders.push(newOrder);
   res.status(201).json({ data: newOrder });
+}
+
+function update(req, res, next) {
+    
 }
 
 function bodyDataHas(propertyName) {
@@ -39,18 +49,18 @@ function bodyDataHas(propertyName) {
 }
 
 function isValidArray(req, res, next) {
-    const {data: {dishes} = {} } = req.body
-    if(Array.isArray(dishes) && dishes.length > 0){
-        return next()
-    }
-    next({
-        status: 400,
-        message: "Order must include at least one dish"
-    })
+  const { data: { dishes } = {} } = req.body;
+  if (Array.isArray(dishes) && dishes.length > 0) {
+    return next();
+  }
+  next({
+    status: 400,
+    message: "Order must include at least one dish",
+  });
 }
 
 function isValidQuantity(req, res, next) {
-  const {data: { dishes } = {} } = req.body;
+  const { data: { dishes } = {} } = req.body;
   dishes.forEach(({ quantity }, index) =>
     quantity && typeof quantity === "number" && quantity > 0
       ? null
@@ -58,8 +68,21 @@ function isValidQuantity(req, res, next) {
           status: 400,
           message: `Dish ${index} must have a quantity that is an integer greater than 0`,
         })
-  )
-  next()
+  );
+  next();
+}
+
+function validateOrderExists(req, res, next) {
+    const { orderId } = req.params
+    const foundOrder = orders.find((order)=> order.id === orderId)
+
+    if(foundOrder){
+        next()
+    }
+    next({
+        status: 404,
+        message: `Order does not exist: ${orderId}`
+    })
 }
 
 module.exports = {
@@ -71,5 +94,9 @@ module.exports = {
     isValidArray,
     isValidQuantity,
     create,
+  ],
+  read: [
+    validateOrderExists,
+    read
   ],
 };
