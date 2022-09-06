@@ -45,6 +45,13 @@ function update(req, res, next) {
     res.status(200).json({data: foundOrder})
 }
 
+function remove(req, res, next) {
+    const { orderId } = req.params
+    const index = orders.findIndex((order)=> order.id === orderId)
+    orders.splice(index,1)
+    res.sendStatus(204)
+}
+
 function bodyDataHas(propertyName) {
   return function (req, res, next) {
     const { data = {} } = req.body;
@@ -144,5 +151,10 @@ module.exports = {
     isValidArray,
     isValidQuantity,
     update
+  ],
+  remove: [
+    validateOrderExists,
+    isValidStatus,
+    remove
   ]
 };
