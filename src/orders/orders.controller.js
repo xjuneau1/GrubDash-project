@@ -94,7 +94,8 @@ function validateOrderExists(req, res, next) {
     const foundOrder = orders.find((order)=> order.id === orderId)
 
     if(foundOrder){
-        next()
+        res.locals.order = foundOrder
+        return next()
     }
     next({
         status: 404,
@@ -126,6 +127,29 @@ function validateBodyIdEqualsRouteId(req, res, next) {
     })
 }
 
+function isPending(req, res, next) {
+    const order = res.locals.order
+    if(order.status === "pending"){
+        next()
+    }
+    next({
+        status:400,
+        message: "An order cannot be deleted unless it is pending"
+    })
+}
+
+function orderNotDelivered(req, res, next) {
+    const order = res.locals.order;
+    if (order.status !== "delivered") {
+      next();
+    } else {
+      next({
+        status: 400,
+        message: "A delivered order cannot be changed",
+      });
+    }
+  }
+
 module.exports = {
   list,
   create: [
@@ -150,11 +174,12 @@ module.exports = {
     isValidStatus,
     isValidArray,
     isValidQuantity,
+    orderNotDelivered,
     update
   ],
   remove: [
     validateOrderExists,
-    isValidStatus,
+    isPending,
     remove
   ]
 };
