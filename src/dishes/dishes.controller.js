@@ -11,8 +11,8 @@ function list (req, res, send) {
 
 function read(req, res, next){
     const { dishId } = req.params
-    const foundDish = dishes.find((dish)=> dish.id === dishId)
-    res.json({data: foundDish})
+    const dish = res.locals.foundDish
+    res.json({data: dish})
 }
 
 function create(req, res, next) {
@@ -29,21 +29,22 @@ function create(req, res, next) {
 }
 
 function update(req, res, next){
-    const { dishId } = req.params
     const { data: { name, description, image_url} = {} } = req.body
-    const foundDish = dishes.find((dish)=> dish.id === dishId)
+    const dish = res.locals.foundDish
 
-    foundDish.name = name
-    foundDish.description = description
-    foundDish.image_url = image_url
+    dish.name = name
+    dish.description = description
+    dish.image_url = image_url
     
-   res.json({data: foundDish})
+   res.json({data: dish})
 }
 
 function validateDishExists (req, res, next){
     const { dishId } = req.params
     const foundDish = dishes.find((dish)=> dish.id === dishId)
     if(foundDish){
+        res.locals.foundDish = foundDish
+        res.locals.dishId = dishId
         return next()
     }
     next({
